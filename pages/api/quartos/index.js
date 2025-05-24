@@ -1,23 +1,39 @@
 import { prisma } from '../../../lib/prisma'
 
 export default async function handler(req, res) {
-  switch (req.method) {
-    case 'GET':
-      const quartos = await prisma.quarto.findMany()
+  if (req.method === 'GET') {
+    try {
+      const quartos = await prisma.quarto.findMany({
+        orderBy: { numero: 'asc' }
+      })
       res.status(200).json(quartos)
-      break
+    } catch (error) {
+      console.error('Erro ao buscar quartos:', error)
+      res.status(500).json({ error: 'Erro interno do servidor' })
+    }
+  } else if (req.method === 'POST') {
+    try {
+      const { numero, tipo, preco } = req.body
 
-    case 'POST':
-      try {
-        const novoQuarto = await prisma.quarto.create({ data: req.body })
-        res.status(201).json(novoQuarto)
-      } catch (error) {
-        res.status(400).json({ error: 'Número do quarto já existe' })
+      if (!numero || !tipo || !preco) {
+        return res.status(400).json({ error: 'Número, tipo e preço são obrigatórios' })
       }
-      break
 
-    default:
-      res.setHeader('Allow', ['GET', 'POST'])
-      res.status(405).end(`Method ${req.method} Not Allowed`)
+      const quarto = await prisma.quarto.create({
+        data: { numero, tipo, preco }
+      })
+
+      res.status(201).json(quarto)
+    } catch (error) {
+      console.error('Erro ao criar quarto:', error)
+      if (error.code === 'P2002') {
+        res.status(400).json({ error: 'Número do quarto já existe' })
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' })
+      }
+    }
+  } else {
+    res.setHeader('Allow', ['GET', 'POST'])
+    res.status(405).end(`Method ${req.method} Not Allowed`)
   }
 }
