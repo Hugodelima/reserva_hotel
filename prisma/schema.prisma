@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://admin:admin@localhost:5432/hotel?schema=public"
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  reservas  Reserva[]
+}
+
+model Quarto {
+  id        Int      @id @default(autoincrement())
+  numero    Int      @unique
+  tipo      String
+  preco     Float
+  reservas  Reserva[]
+}
+
+model Reserva {
+  id         Int      @id @default(autoincrement())
+  clienteId  Int
+  quartoId   Int
+  dataInicio DateTime
+  dataFim    DateTime
+
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  quarto     Quarto   @relation(fields: [quartoId], references: [id])
+}
